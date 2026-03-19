@@ -6,15 +6,18 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "pages:build": "npx @cloudflare/next-on-pages",
+    "preview": "npm run pages:build && wrangler pages dev"
   },
   "dependencies": {
-    "next": "14.2.3",
+    "next": "^15.4.0",
     "react": "^18",
     "react-dom": "^18",
     "react-dropzone": "^14.2.3"
   },
   "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.13.16",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
