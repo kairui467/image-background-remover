@@ -1,15 +1,18 @@
 import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
 import './globals.css'
 
+const inter = Inter({ subsets: ['latin'] })
+
 export const metadata: Metadata = {
-  title: 'Image Background Remover - Free Online Tool',
-  description: 'Remove image backgrounds instantly for free. No signup required.',
+  title: '图片背景去除 - 免费在线工具 | Background Remover',
+  description: '一键去除图片背景，免费、快速、隐私安全。支持 JPG、PNG、WebP 格式。',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body>{children}</body>
+    <html lang="zh">
+      <body className={inter.className}>{children}</body>
     </html>
   )
 }
