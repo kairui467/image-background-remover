@@ -3,6 +3,8 @@
 import { useState, useCallback } from 'react'
 import { useDropzone } from 'react-dropzone'
 
+import UserMenu from '@/components/UserMenu'
+
 const i18n = {
   en: {
     title: 'Background Remover',
@@ -111,12 +113,15 @@ export default function Home() {
           <h1 className="text-3xl font-bold text-gray-900">{t.title}</h1>
           <p className="text-gray-500 mt-1">{t.subtitle}</p>
         </div>
-        <button
-          onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
-          className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors"
-        >
-          {t.langSwitch}
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setLang(lang === 'en' ? 'zh' : 'en')}
+            className="text-sm border border-gray-300 rounded-lg px-3 py-1.5 text-gray-600 hover:border-blue-400 hover:text-blue-600 transition-colors"
+          >
+            {t.langSwitch}
+          </button>
+          <UserMenu />
+        </div>
       </header>
 
       {/* Steps guide */}
