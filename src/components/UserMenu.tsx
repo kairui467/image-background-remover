@@ -1,5 +1,6 @@
 'use client'
 import { signIn, signOut, useSession } from "next-auth/react"
+import Link from "next/link"
 
 export default function UserMenu() {
   const { data: session, status } = useSession()
@@ -21,8 +22,15 @@ export default function UserMenu() {
 
   return (
     <div className="flex items-center gap-3">
-      <img src={session.user?.image ?? ""} alt="avatar" className="w-8 h-8 rounded-full border border-gray-200" />
-      <span className="text-sm text-gray-700 font-medium">{session.user?.name}</span>
+      <Link href="/profile" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
+        <img src={session.user?.image ?? ""} alt="avatar" className="w-8 h-8 rounded-full border border-gray-200" />
+        <span className="text-sm text-gray-700 font-medium hidden sm:inline">{session.user?.name}</span>
+      </Link>
+      
+      <Link href="/profile" className="text-sm bg-purple-100 text-purple-700 font-semibold px-3 py-1.5 rounded-lg hover:bg-purple-200 transition-colors">
+        个人中心
+      </Link>
+      
       <button 
         onClick={() => signOut()}
         className="text-sm border border-gray-300 text-gray-600 rounded-lg px-3 py-1.5 hover:bg-red-50 hover:text-red-500 transition-colors"
