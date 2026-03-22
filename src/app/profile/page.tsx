@@ -2,9 +2,6 @@ import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 
-export const runtime = 'edge'
-export const dynamic = 'force-dynamic'
-
 export default async function ProfilePage() {
   const session = await auth()
   if (!session?.user?.email) redirect("/")
