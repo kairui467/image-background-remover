@@ -1,3 +1,3 @@
 import { handlers } from "@/auth"
 export const { GET, POST } = handlers
-export const dynamic = 'force-static'
+export const runtime = 'edge'
