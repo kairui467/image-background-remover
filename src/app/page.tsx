@@ -107,8 +107,6 @@ export default function Home() {
   return (
     <main className="min-h-screen flex flex-col items-center bg-gradient-to-b from-slate-50 to-white px-4 py-10">
 
-      <div className="bg-green-200 p-3 text-black mb-4 rounded shadow-sm font-bold">✅ Updated: 2026-03-23 19:42 GMT+8</div>
-
       {/* Header */}
       <header className="w-full max-w-3xl flex items-center justify-between mb-10">
         <div>
