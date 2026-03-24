@@ -210,6 +210,11 @@ export default function Home() {
       <footer className="mt-auto pt-16 text-gray-400 text-sm">
         {t.footer}
       </footer>
+
+      {/* Deployment Test Banner */}
+      <div className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg text-sm shadow-lg">
+        ✅ Deployment Test: 2026-03-24 21:47
+      </div>
     </main>
   )
 }
