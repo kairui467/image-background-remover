@@ -5,10 +5,50 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { useEffect, useState } from "react"
 
+interface UserProfile {
+  user: {
+    id: string
+    name: string | null
+    email: string
+    image: string | null
+    createdAt: string
+  }
+  credits: {
+    remaining: number
+    total: number
+    used: number
+  }
+  plan: {
+    type: string
+    expiresAt: string | null
+  }
+}
+
+interface ImageRecord {
+  id: string
+  fileName: string | null
+  status: string
+  cost: number
+  date: string
+}
+
+interface Bill {
+  id: string
+  date: string
+  item: string
+  amount: string
+  status: string
+}
+
 export default function ProfilePage() {
   const { data: session, status } = useSession()
   const router = useRouter()
   const [activeTab, setActiveTab] = useState("overview")
+  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [records, setRecords] = useState<ImageRecord[]>([])
+  const [bills, setBills] = useState<Bill[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -16,7 +56,43 @@ export default function ProfilePage() {
     }
   }, [status, router])
 
-  if (status === "loading") {
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetchData()
+    }
+  }, [status])
+
+  const fetchData = async () => {
+    try {
+      setLoading(true)
+      setError(null)
+
+      // 获取用户信息
+      const profileRes = await fetch("/api/user/profile")
+      if (!profileRes.ok) throw new Error("获取用户信息失败")
+      const profileData = await profileRes.json()
+      setProfile(profileData)
+
+      // 获取使用记录
+      const recordsRes = await fetch("/api/user/records?page=1&limit=10")
+      if (!recordsRes.ok) throw new Error("获取使用记录失败")
+      const recordsData = await recordsRes.json()
+      setRecords(recordsData.records)
+
+      // 获取账单
+      const billsRes = await fetch("/api/user/billing?page=1&limit=10")
+      if (!billsRes.ok) throw new Error("获取账单失败")
+      const billsData = await billsRes.json()
+      setBills(billsData.bills)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "加载失败")
+      console.error(err)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (status === "loading" || loading) {
     return (
       <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white px-4 py-10">
         <div className="max-w-5xl mx-auto">
@@ -33,6 +109,31 @@ export default function ProfilePage() {
     return null
   }
 
+  if (error) {
+    return (
+      <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white px-4 py-10">
+        <div className="max-w-5xl mx-auto">
+          <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-6 py-4">
+            <p className="font-medium">加载失败</p>
+            <p className="text-sm mt-1">{error}</p>
+            <button
+              onClick={fetchData}
+              className="mt-3 text-sm underline text-red-600 hover:text-red-700"
+            >
+              重试
+            </button>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  if (!profile) {
+    return null
+  }
+
+  const usagePercent = (profile.credits.used / profile.credits.total) * 100
+
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white px-4 py-10">
       <div className="max-w-5xl mx-auto">
@@ -46,18 +147,18 @@ export default function ProfilePage() {
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              {session.user?.image && (
+              {profile.user.image && (
                 <img
-                  src={session.user.image}
-                  alt={session.user.name || "User"}
+                  src={profile.user.image}
+                  alt={profile.user.name || "User"}
                   className="w-16 h-16 rounded-full border-2 border-gray-200"
                 />
               )}
               <div>
                 <h2 className="text-xl font-bold text-gray-900">
-                  {session.user?.name || "用户"}
+                  {profile.user.name || "用户"}
                 </h2>
-                <p className="text-gray-500">{session.user?.email}</p>
+                <p className="text-gray-500">{profile.user.email}</p>
               </div>
             </div>
             <button
@@ -114,12 +215,14 @@ export default function ProfilePage() {
                 <div>
                   <div className="flex justify-between mb-2">
                     <span className="text-sm font-medium text-gray-700">使用进度</span>
-                    <span className="text-sm text-gray-500">7 / 50 次</span>
+                    <span className="text-sm text-gray-500">
+                      {profile.credits.used} / {profile.credits.total} 次
+                    </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
                     <div
                       className="bg-blue-600 h-full transition-all duration-300"
-                      style={{ width: "14%" }}
+                      style={{ width: `${Math.min(usagePercent, 100)}%` }}
                     ></div>
                   </div>
                 </div>
@@ -127,15 +230,21 @@ export default function ProfilePage() {
                 {/* 额度统计 */}
                 <div className="grid grid-cols-3 gap-4">
                   <div className="bg-blue-50 rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-blue-600">43</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {profile.credits.remaining}
+                    </p>
                     <p className="text-sm text-gray-600">剩余次数</p>
                   </div>
                   <div className="bg-green-50 rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-green-600">50</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {profile.credits.total}
+                    </p>
                     <p className="text-sm text-gray-600">总额度</p>
                   </div>
                   <div className="bg-orange-50 rounded-lg p-4 text-center">
-                    <p className="text-2xl font-bold text-orange-600">7</p>
+                    <p className="text-2xl font-bold text-orange-600">
+                      {profile.credits.used}
+                    </p>
                     <p className="text-sm text-gray-600">已使用</p>
                   </div>
                 </div>
@@ -161,16 +270,18 @@ export default function ProfilePage() {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-gray-600">方案</span>
-                  <span className="font-medium text-gray-900">专业版 (月度)</span>
+                  <span className="font-medium text-gray-900">
+                    {profile.plan.type === "FREE" ? "免费版" : "付费版"}
+                  </span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">价格</span>
-                  <span className="font-medium text-gray-900">¥29.9/月</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">下次扣费</span>
-                  <span className="font-medium text-gray-900">2026-04-24</span>
-                </div>
+                {profile.plan.expiresAt && (
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">到期时间</span>
+                    <span className="font-medium text-gray-900">
+                      {new Date(profile.plan.expiresAt).toLocaleDateString("zh-CN")}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span className="text-gray-600">状态</span>
                   <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
@@ -186,54 +297,52 @@ export default function ProfilePage() {
         {activeTab === "usage" && (
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4">📊 使用记录</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      日期
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      文件名
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      消耗
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      状态
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { date: "2026-03-24", file: "photo.jpg", cost: 1, status: "success" },
-                    { date: "2026-03-23", file: "image.png", cost: 2, status: "success" },
-                    { date: "2026-03-22", file: "picture.webp", cost: 1, status: "success" },
-                    { date: "2026-03-21", file: "avatar.jpg", cost: 1, status: "success" },
-                    { date: "2026-03-20", file: "background.png", cost: 2, status: "success" },
-                  ].map((record, idx) => (
-                    <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4 text-gray-600">{record.date}</td>
-                      <td className="py-3 px-4 text-gray-900 truncate max-w-xs">
-                        {record.file}
-                      </td>
-                      <td className="py-3 px-4 text-gray-600">{record.cost} 次</td>
-                      <td className="py-3 px-4">
-                        {record.status === "success" ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
-                            ✅ 成功
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">
-                            ❌ 失败
-                          </span>
-                        )}
-                      </td>
+            {records.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">暂无使用记录</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">
+                        日期
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">
+                        文件名
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">
+                        消耗
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">
+                        状态
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {records.map((record) => (
+                      <tr key={record.id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4 text-gray-600">{record.date}</td>
+                        <td className="py-3 px-4 text-gray-900 truncate max-w-xs">
+                          {record.fileName || "未命名"}
+                        </td>
+                        <td className="py-3 px-4 text-gray-600">{record.cost} 次</td>
+                        <td className="py-3 px-4">
+                          {record.status === "SUCCESS" ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
+                              ✅ 成功
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">
+                              ❌ 失败
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
 
@@ -241,54 +350,53 @@ export default function ProfilePage() {
         {activeTab === "billing" && (
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
             <h3 className="text-lg font-bold text-gray-900 mb-4">💰 账单历史</h3>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-200">
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      日期
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      项目
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      金额
-                    </th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-700">
-                      状态
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { date: "2026-03-24", item: "月度订阅", amount: "¥29.9", status: "success" },
-                    { date: "2026-02-24", item: "月度订阅", amount: "¥29.9", status: "success" },
-                    { date: "2026-01-24", item: "月度订阅", amount: "¥29.9", status: "success" },
-                  ].map((bill, idx) => (
-                    <tr key={idx} className="border-b border-gray-100 hover:bg-gray-50">
-                      <td className="py-3 px-4 text-gray-600">{bill.date}</td>
-                      <td className="py-3 px-4 text-gray-900">{bill.item}</td>
-                      <td className="py-3 px-4 font-medium text-gray-900">{bill.amount}</td>
-                      <td className="py-3 px-4">
-                        {bill.status === "success" ? (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
-                            ✅ 成功
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">
-                            ❌ 失败
-                          </span>
-                        )}
-                      </td>
+            {bills.length === 0 ? (
+              <p className="text-center text-gray-500 py-8">暂无账单记录</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b border-gray-200">
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">
+                        日期
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">
+                        项目
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">
+                        金额
+                      </th>
+                      <th className="text-left py-3 px-4 font-medium text-gray-700">
+                        状态
+                      </th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </thead>
+                  <tbody>
+                    {bills.map((bill) => (
+                      <tr key={bill.id} className="border-b border-gray-100 hover:bg-gray-50">
+                        <td className="py-3 px-4 text-gray-600">{bill.date}</td>
+                        <td className="py-3 px-4 text-gray-900">{bill.item}</td>
+                        <td className="py-3 px-4 font-medium text-gray-900">{bill.amount}</td>
+                        <td className="py-3 px-4">
+                          {bill.status === "success" ? (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 rounded text-xs font-medium">
+                              ✅ 成功
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2 py-1 bg-red-100 text-red-700 rounded text-xs font-medium">
+                              ❌ 失败
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </div>
         )}
       </div>
     </main>
   )
 }
-
