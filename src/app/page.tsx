@@ -65,8 +65,6 @@ export default function Home() {
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [userCredits, setUserCredits] = useState(0)
 
-  const t = i18n[lang]
-
   // 获取用户额度
   useEffect(() => {
     if (status === 'authenticated') {
