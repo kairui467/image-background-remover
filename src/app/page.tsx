@@ -120,6 +120,12 @@ export default function Home() {
           >
             {t.langSwitch}
           </button>
+          <a
+            href="/pricing"
+            className="text-sm bg-purple-600 text-white rounded-lg px-4 py-1.5 hover:bg-purple-700 transition-colors"
+          >
+            升级
+          </a>
           <UserMenu />
         </div>
       </header>
