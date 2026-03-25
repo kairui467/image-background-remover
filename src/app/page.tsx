@@ -1,7 +1,8 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useDropzone } from 'react-dropzone'
+import { useSession } from 'next-auth/react'
 
 import UserMenu from '@/components/UserMenu'
 
@@ -53,12 +54,37 @@ const i18n = {
 type Lang = 'en' | 'zh'
 
 export default function Home() {
+  const { data: session, status } = useSession()
   const [lang, setLang] = useState<Lang>('zh')
   const [original, setOriginal] = useState<string | null>(null)
   const [result, setResult] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fileName, setFileName] = useState<string>('removed-bg.png')
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false)
+  const [userCredits, setUserCredits] = useState(0)
+
+  const t = i18n[lang]
+
+  // 获取用户额度
+  useEffect(() => {
+    if (status === 'authenticated') {
+      fetchUserCredits()
+    }
+  }, [status])
+
+  const fetchUserCredits = async () => {
+    try {
+      const res = await fetch('/api/user/profile')
+      if (res.ok) {
+        const data = await res.json()
+        setUserCredits(data.credits.remaining)
+      }
+    } catch (error) {
+      console.error('Failed to fetch credits:', error)
+    }
+  }
 
   const t = i18n[lang]
 
@@ -88,8 +114,22 @@ export default function Home() {
   }, [])
 
   const onDrop = useCallback((accepted: File[]) => {
-    if (accepted[0]) processImage(accepted[0])
-  }, [processImage])
+    if (!accepted[0]) return
+
+    // 未登录检查
+    if (status !== 'authenticated') {
+      setShowLoginModal(true)
+      return
+    }
+
+    // 额度检查
+    if (userCredits <= 0) {
+      setShowUpgradeModal(true)
+      return
+    }
+
+    processImage(accepted[0])
+  }, [processImage, status, userCredits])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -217,10 +257,56 @@ export default function Home() {
         {t.footer}
       </footer>
 
-      {/* Deployment Test Banner */}
-      <div className="fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg text-sm shadow-lg">
-        ✅ Deployment Test: 2026-03-24 21:47
-      </div>
+      {/* 登录提示模态框 */}
+      {showLoginModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 max-w-sm mx-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">请先登录</h2>
+            <p className="text-gray-600 mb-6">登录后即可使用背景去除功能</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowLoginModal(false)}
+                className="flex-1 border border-gray-300 text-gray-600 font-medium py-2 rounded-lg hover:bg-gray-50"
+              >
+                取消
+              </button>
+              <button
+                onClick={() => {
+                  setShowLoginModal(false)
+                  window.location.href = '/api/auth/signin'
+                }}
+                className="flex-1 bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700"
+              >
+                登录
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 升级提示模态框 */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 max-w-sm mx-4">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">额度已用完</h2>
+            <p className="text-gray-600 mb-6">升级到付费版本，获得更多处理次数</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowUpgradeModal(false)}
+                className="flex-1 border border-gray-300 text-gray-600 font-medium py-2 rounded-lg hover:bg-gray-50"
+              >
+                取消
+              </button>
+              <a
+                href="/pricing"
+                className="flex-1 bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700 text-center"
+              >
+                查看定价
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   )
 }
