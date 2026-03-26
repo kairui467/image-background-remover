@@ -23,9 +23,9 @@ export async function GET() {
         createdAt: new Date().toISOString(),
       },
       credits: {
-        remaining: 3,
+        remaining: 0,
         total: 3,
-        used: 0,
+        used: 3,
       },
       plan: {
         type: "FREE",
