@@ -1,7 +1,6 @@
 import { auth } from "@/auth"
 import { NextResponse } from "next/server"
 import { createPayPalOrder } from "@/lib/paypal"
-import { prisma } from "@/lib/prisma"
 
 export const runtime = 'edge'
 

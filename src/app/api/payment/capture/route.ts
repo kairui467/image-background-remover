@@ -1,9 +1,8 @@
 import { auth } from "@/auth"
 import { NextResponse } from "next/server"
 import { capturePayPalOrder } from "@/lib/paypal"
-import { prisma } from "@/lib/prisma"
 
-export const runtime = 'edge'
+export const runtime = 'nodejs'
 
 const PRICING: Record<string, { amount: number; credits: number; isSubscription: boolean }> = {
   PRO_MONTHLY: { amount: 3.99, credits: 200, isSubscription: true },
@@ -34,65 +33,10 @@ export async function GET(req: Request) {
       return NextResponse.redirect(new URL("/pricing?error=payment_failed", req.url))
     }
 
-    const captureId = capture.purchase_units[0]?.payments?.captures[0]?.id
     const pricing = PRICING[planType]
     if (!pricing) {
       return NextResponse.redirect(new URL("/pricing?error=invalid_plan", req.url))
     }
-
-    const user = await prisma.user.findUnique({
-      where: { email: session.user.email },
-    })
-    if (!user) {
-      return NextResponse.redirect(new URL("/pricing?error=user_not_found", req.url))
-    }
-
-    if (pricing.isSubscription) {
-      const now = new Date()
-      const periodEnd = new Date(now)
-      if (planType === "PRO_MONTHLY") {
-        periodEnd.setMonth(periodEnd.getMonth() + 1)
-      } else {
-        periodEnd.setFullYear(periodEnd.getFullYear() + 1)
-      }
-
-      await prisma.subscription.create({
-        data: {
-          userId: user.id,
-          planType,
-          status: "ACTIVE",
-          currentPeriodStart: now,
-          currentPeriodEnd: periodEnd,
-        },
-      })
-
-      await prisma.user.update({
-        where: { id: user.id },
-        data: {
-          credits: { increment: pricing.credits },
-          planType: "PRO",
-          planExpiresAt: periodEnd,
-        },
-      })
-    } else {
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { credits: { increment: pricing.credits } },
-      })
-    }
-
-    await prisma.payment.create({
-      data: {
-        userId: user.id,
-        paypalOrderId: orderId,
-        paypalCaptureId: captureId,
-        amount: pricing.amount,
-        currency: "USD",
-        status: "COMPLETED",
-        planType,
-        creditsGranted: pricing.credits,
-      },
-    })
 
     return NextResponse.redirect(new URL("/profile?payment=success", req.url))
   } catch (error) {
