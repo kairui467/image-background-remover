@@ -2,3 +2,8 @@ name = "image-background-remover"
 compatibility_date = "2024-12-16"
 compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".vercel/output/static"
+
+[[kv_namespaces]]
+binding = "USER_CREDITS"
+id = "e4d5268eb7ab43f49db94a1c7fac3768"
+

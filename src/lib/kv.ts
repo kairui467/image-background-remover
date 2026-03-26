@@ -1,13 +1,8 @@
 const CF_ACCOUNT_ID = "4623de0514daccbbc581b6f4253b73e0"
 const CF_API_TOKEN = "cfat_M3TEAx26V5xyx5c65VpUl7u4RniwGzHrzO0YsOjP584165f7"
-const KV_NAMESPACE_ID = process.env.CF_KV_NAMESPACE_ID || ""
+const KV_NAMESPACE_ID = "e4d5268eb7ab43f49db94a1c7fac3768"
 
 const KV_BASE = `https://api.cloudflare.com/client/v4/accounts/${CF_ACCOUNT_ID}/storage/kv/namespaces/${KV_NAMESPACE_ID}`
-
-const KV_HEADERS = {
-  Authorization: `Bearer ${CF_API_TOKEN}`,
-  "Content-Type": "application/json",
-}
 
 export interface UserCredits {
   credits: number
@@ -24,7 +19,6 @@ const DEFAULT_CREDITS: UserCredits = {
 }
 
 export async function getUserCredits(userId: string): Promise<UserCredits> {
-  if (!KV_NAMESPACE_ID) return DEFAULT_CREDITS
   try {
     const res = await fetch(`${KV_BASE}/values/user:${userId}`, {
       headers: { Authorization: `Bearer ${CF_API_TOKEN}` },
@@ -38,7 +32,6 @@ export async function getUserCredits(userId: string): Promise<UserCredits> {
 }
 
 export async function setUserCredits(userId: string, data: UserCredits): Promise<void> {
-  if (!KV_NAMESPACE_ID) return
   await fetch(`${KV_BASE}/values/user:${userId}`, {
     method: "PUT",
     headers: { Authorization: `Bearer ${CF_API_TOKEN}`, "Content-Type": "text/plain" },
