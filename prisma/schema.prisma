@@ -37,20 +37,23 @@ model Session {
 }
 
 model User {
-  id            String    @id @default(cuid())
-  name          String?
-  email         String?   @unique
-  emailVerified DateTime?
-  image         String?
+  id                String    @id @default(cuid())
+  name              String?
+  email             String?   @unique
+  emailVerified     DateTime?
+  image             String?
   
   // 计费与额度体系
-  credits       Int       @default(3)      // 注册赠送3次
-  planType      String    @default("FREE") // "FREE" 或 "PRO"
-  planExpiresAt DateTime?                  // 订阅到期时间
+  credits           Int       @default(3)      // 注册赠送3次
+  totalCreditsUsed  Int       @default(0)      // 累计消耗额度
+  planType          String    @default("FREE") // "FREE" 或 "PRO"
+  planExpiresAt     DateTime?                  // 订阅到期时间
 
-  accounts      Account[]
-  sessions      Session[]
-  images        ImageRecord[]
+  accounts          Account[]
+  sessions          Session[]
+  images            ImageRecord[]
+  subscriptions     Subscription[]
+  payments          Payment[]
 }
 
 model ImageRecord {
@@ -70,4 +73,37 @@ model VerificationToken {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+model Subscription {
+  id              String    @id @default(cuid())
+  userId          String
+  planType        String                         // "PRO_MONTHLY" | "PRO_YEARLY"
+  status          String    @default("ACTIVE")  // "ACTIVE" | "CANCELLED" | "EXPIRED"
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelledAt     DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments        Payment[]
+}
+
+model Payment {
+  id                String    @id @default(cuid())
+  userId            String
+  subscriptionId    String?
+  paypalOrderId     String?   @unique           // PayPal 订单 ID
+  paypalCaptureId   String?   @unique           // PayPal 扣款 ID
+  amount            Float                        // 金额（USD）
+  currency          String    @default("USD")
+  status            String    @default("PENDING") // "PENDING" | "COMPLETED" | "FAILED" | "REFUNDED"
+  planType          String                        // 购买的方案
+  creditsGranted    Int       @default(0)         // 赠送的额度
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  user              User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription      Subscription? @relation(fields: [subscriptionId], references: [id])
 }
