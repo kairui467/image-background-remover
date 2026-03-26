@@ -4,16 +4,31 @@ import { useSession } from "next-auth/react"
 import Link from "next/link"
 import { useState } from "react"
 
+const PLAN_TYPE_MAP: Record<string, string> = {
+  "专业版_monthly": "PRO_MONTHLY",
+  "专业版_yearly": "PRO_YEARLY",
+  "企业版_monthly": "PRO_MONTHLY",
+  "企业版_yearly": "PRO_YEARLY",
+}
+
+const CREDIT_PACK_MAP: Record<string, string> = {
+  "小包": "CREDITS_SMALL",
+  "中包": "CREDITS_MEDIUM",
+  "大包": "CREDITS_LARGE",
+  "超大包": "CREDITS_XLARGE",
+}
+
 export default function PricingPage() {
   const { data: session } = useSession()
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState<string | null>(null)
 
   const plans = {
     monthly: [
       {
         name: "免费版",
-        price: "¥0",
+        price: "$0",
+        usdPrice: "0.00",
         period: "永久",
         credits: 3,
         features: ["3次/月", "基础功能", "标准处理速度"],
@@ -23,7 +38,8 @@ export default function PricingPage() {
       },
       {
         name: "专业版",
-        price: "¥29.9",
+        price: "$3.99",
+        usdPrice: "3.99",
         period: "/月",
         credits: 200,
         features: ["200次/月", "优先处理", "无水印"],
@@ -33,7 +49,8 @@ export default function PricingPage() {
       },
       {
         name: "企业版",
-        price: "¥99.9",
+        price: "$13.99",
+        usdPrice: "13.99",
         period: "/月",
         credits: 1000,
         features: ["1000次/月", "优先处理", "无水印", "API 访问"],
@@ -45,7 +62,8 @@ export default function PricingPage() {
     yearly: [
       {
         name: "免费版",
-        price: "¥0",
+        price: "$0",
+        usdPrice: "0.00",
         period: "永久",
         credits: 3,
         features: ["3次/月", "基础功能", "标准处理速度"],
@@ -55,7 +73,8 @@ export default function PricingPage() {
       },
       {
         name: "专业版",
-        price: "¥299",
+        price: "$39.99",
+        usdPrice: "39.99",
         period: "/年",
         credits: 2400,
         features: ["2400次/年", "优先处理", "无水印", "节省 17%"],
@@ -65,7 +84,8 @@ export default function PricingPage() {
       },
       {
         name: "企业版",
-        price: "¥999",
+        price: "$139.99",
+        usdPrice: "139.99",
         period: "/年",
         credits: 12000,
         features: ["12000次/年", "优先处理", "无水印", "API 访问", "节省 17%"],
@@ -77,10 +97,10 @@ export default function PricingPage() {
   }
 
   const creditPacks = [
-    { name: "小包", price: "¥9.9", credits: 10, unitPrice: "¥0.99/次" },
-    { name: "中包", price: "¥19.9", credits: 25, unitPrice: "¥0.80/次" },
-    { name: "大包", price: "¥49.9", credits: 100, unitPrice: "¥0.50/次" },
-    { name: "超大包", price: "¥99.9", credits: 300, unitPrice: "¥0.33/次" },
+    { name: "小包", price: "$1.39", credits: 10, unitPrice: "$0.14/次", planType: "CREDITS_SMALL" },
+    { name: "中包", price: "$2.79", credits: 25, unitPrice: "$0.11/次", planType: "CREDITS_MEDIUM" },
+    { name: "大包", price: "$6.99", credits: 100, unitPrice: "$0.07/次", planType: "CREDITS_LARGE" },
+    { name: "超大包", price: "$13.99", credits: 300, unitPrice: "$0.05/次", planType: "CREDITS_XLARGE" },
   ]
 
   const faqs = [
@@ -98,7 +118,7 @@ export default function PricingPage() {
     },
     {
       q: "支持哪些支付方式？",
-      a: "目前支持支付宝、微信支付。后期将支持 PayPal、信用卡等。",
+      a: "目前支持 PayPal，包含 PayPal 余额、信用卡、借记卡等多种付款方式。",
     },
     {
       q: "如何获取发票？",
@@ -112,30 +132,38 @@ export default function PricingPage() {
 
   const currentPlans = plans[billingCycle]
 
-  const handleUpgrade = async (planName: string) => {
+  const handlePayment = async (planType: string) => {
     if (!session) {
       alert("请先登录")
       return
     }
 
-    setLoading(true)
+    setLoading(planType)
     try {
-      const res = await fetch("/api/subscribe", {
+      const res = await fetch("/api/payment/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ planName, billingCycle }),
+        body: JSON.stringify({ planType }),
       })
 
-      if (res.ok) {
-        alert("升级成功！")
-        window.location.href = "/profile"
+      const data = await res.json() as { approveUrl?: string; error?: string }
+      if (data.approveUrl) {
+        window.location.href = data.approveUrl
       } else {
-        alert("升级失败，请重试")
+        alert("创建支付订单失败：" + (data.error || "未知错误"))
       }
     } catch (error) {
       alert("错误：" + (error instanceof Error ? error.message : "未知错误"))
     } finally {
-      setLoading(false)
+      setLoading(null)
+    }
+  }
+
+  const handleUpgrade = (planName: string) => {
+    const key = `${planName}_${billingCycle}`
+    const planType = PLAN_TYPE_MAP[key]
+    if (planType) {
+      handlePayment(planType)
     }
   }
 
@@ -222,14 +250,16 @@ export default function PricingPage() {
 
               <button
                 onClick={() => handleUpgrade(plan.name)}
-                disabled={plan.disabled || loading}
+                disabled={plan.disabled || loading !== null}
                 className={`w-full py-3 rounded-lg font-medium transition-colors ${
                   plan.disabled
                     ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
                     : 'bg-blue-600 text-white hover:bg-blue-700'
                 }`}
               >
-                {loading ? "处理中..." : plan.cta}
+                {loading === PLAN_TYPE_MAP[`${plan.name}_${billingCycle}`]
+                  ? "跳转中..."
+                  : plan.cta}
               </button>
             </div>
           ))}
@@ -255,16 +285,11 @@ export default function PricingPage() {
                 <p className="text-gray-600 mb-4">{pack.credits} 次</p>
                 <p className="text-sm text-gray-500 mb-4">{pack.unitPrice}</p>
                 <button
-                  onClick={() => {
-                    if (!session) {
-                      alert("请先登录")
-                      return
-                    }
-                    alert("即将上线")
-                  }}
-                  className="w-full bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  onClick={() => handlePayment(pack.planType)}
+                  disabled={loading !== null}
+                  className="w-full bg-blue-600 text-white font-medium py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                 >
-                  购买
+                  {loading === pack.planType ? "跳转中..." : "购买"}
                 </button>
               </div>
             ))}
@@ -291,7 +316,7 @@ export default function PricingPage() {
         {/* 底部信任背书 */}
         <div className="mt-16 text-center">
           <p className="text-gray-600 mb-4">
-            🔒 安全支付 • 💳 支持多种支付方式 • ↩️ 7 天无理由退款
+            🔒 PayPal 安全支付 • 💳 支持信用卡/借记卡 • ↩️ 7 天无理由退款
           </p>
           <p className="text-sm text-gray-500">
             有任何问题？<Link href="/" className="text-blue-600 hover:underline">联系我们</Link>
