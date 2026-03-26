@@ -27,20 +27,32 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "无效的方案" }, { status: 400 })
     }
 
+    // 从请求 URL 动态获取 origin，不依赖环境变量
+    const origin = new URL(req.url).origin
+
     const order = await createPayPalOrder(
       pricing.amount,
       planType,
-      `购买: ${planType}`
+      `购买: ${planType}`,
+      origin,
     )
 
-    const approveLink = order.links.find((l: { rel: string }) => l.rel === "approve_link")
+    if (!order?.links) {
+      console.error("PayPal order response:", JSON.stringify(order))
+      return NextResponse.json({ error: "PayPal 返回异常" }, { status: 500 })
+    }
+
+    // PayPal approve 链接的 rel 可能是 "payer-action" 或 "approve"
+    const approveLink = order.links.find(
+      (l: { rel: string }) => l.rel === "payer-action" || l.rel === "approve"
+    )
 
     return NextResponse.json({
       orderId: order.id,
       approveUrl: approveLink?.href,
     })
   } catch (error) {
-    console.error(error)
+    console.error("Payment create error:", error)
     return NextResponse.json({ error: "创建订单失败" }, { status: 500 })
   }
 }

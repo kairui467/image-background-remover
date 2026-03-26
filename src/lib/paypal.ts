@@ -25,7 +25,8 @@ export async function getPayPalAccessToken() {
 export async function createPayPalOrder(
   amount: string,
   planType: string,
-  description: string
+  description: string,
+  origin: string,
 ) {
   const token = await getPayPalAccessToken()
 
@@ -47,8 +48,11 @@ export async function createPayPalOrder(
         },
       ],
       application_context: {
-        return_url: `${process.env.NEXTAUTH_URL}/api/payment/capture`,
-        cancel_url: `${process.env.NEXTAUTH_URL}/pricing`,
+        return_url: `${origin}/api/payment/capture`,
+        cancel_url: `${origin}/pricing`,
+        brand_name: "Image Background Remover",
+        landing_page: "LOGIN",
+        user_action: "PAY_NOW",
       },
     }),
   })
