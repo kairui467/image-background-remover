@@ -1,6 +1,6 @@
-const PAYPAL_CLIENT_ID = "AT1JcO8LsbeX6OzMwZCFrXsTj-L_A3aHGLHsoCwf1z2Z550mzW7C_W4OxqoIz1SmP55ldtsM4eCNh7iI"
-const PAYPAL_SECRET = "EA_JxYGpxn5OLl-pebCnk1CNVS70s3TG_JaHxq33rBGwi5huuL8YHoPfVHJo8c07RLueNmjyEi_MmwP2"
-const PAYPAL_API = "https://api-m.paypal.com"
+const PAYPAL_CLIENT_ID = "AR7hj9ZyE8RiR6-wX_1wweuJUT_R_rdvdAmv-iEyiqy3AzsTMRESSzdOOm-kl4sZOjxOnv-3vWi8v4BO"
+const PAYPAL_SECRET = "EGpJ_YaCGdRvBBQ9XWuU8e52ODbF3H1N1SENuZ8kdwTf9FgVBDmrziHU7RfoaeAN8dQo8aawzrrHoB3O"
+const PAYPAL_API = "https://api-m.sandbox.paypal.com"
 
 function btoa_safe(str: string) {
   return btoa(str)
