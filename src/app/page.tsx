@@ -104,12 +104,14 @@ export default function Home() {
       }
       const blob = await res.blob()
       setResult(URL.createObjectURL(blob))
+      // 处理成功后刷新额度
+      await fetchUserCredits()
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Unknown error')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [fetchUserCredits])
 
   const onDrop = useCallback((accepted: File[]) => {
     if (!accepted[0]) return
