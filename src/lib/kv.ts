@@ -12,7 +12,7 @@ export interface UserCredits {
 }
 
 const DEFAULT_CREDITS: UserCredits = {
-  credits: 3,
+  credits: 1,
   totalCreditsUsed: 0,
   planType: "FREE",
   planExpiresAt: null,
