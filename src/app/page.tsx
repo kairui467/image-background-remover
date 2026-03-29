@@ -64,6 +64,7 @@ export default function Home() {
   const [showLoginModal, setShowLoginModal] = useState(false)
   const [showUpgradeModal, setShowUpgradeModal] = useState(false)
   const [userCredits, setUserCredits] = useState(0)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
 
   // 获取用户额度
   useEffect(() => {
@@ -113,6 +114,34 @@ export default function Home() {
     }
   }, [fetchUserCredits])
 
+  // 假的图片处理函数（用于测试额度扣减）
+  const processMockImage = useCallback(async (file: File) => {
+    setOriginal(URL.createObjectURL(file))
+    setResult(null)
+    setError(null)
+    setLoading(true)
+    setFileName(`test-removed-bg-${file.name.replace(/\.[^.]+$/, '')}.png`)
+
+    const formData = new FormData()
+    formData.append('image', file)
+
+    try {
+      const res = await fetch('/api/remove-bg-mock', { method: 'POST', body: formData })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.error || 'Processing failed')
+      }
+      const blob = await res.blob()
+      setResult(URL.createObjectURL(blob))
+      // 处理成功后刷新额度
+      await fetchUserCredits()
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Unknown error')
+    } finally {
+      setLoading(false)
+    }
+  }, [fetchUserCredits])
+
   const onDrop = useCallback((accepted: File[]) => {
     if (!accepted[0]) return
 
@@ -128,8 +157,9 @@ export default function Home() {
       return
     }
 
-    processImage(accepted[0])
-  }, [processImage, status, userCredits])
+    // 保存文件以供处理选择
+    setSelectedFile(accepted[0])
+  }, [status, userCredits])
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
@@ -189,16 +219,51 @@ export default function Home() {
 
       {/* Upload area */}
       {!original && (
-        <div
-          {...getRootProps()}
-          className={`w-full max-w-3xl border-2 border-dashed rounded-2xl p-16 text-center cursor-pointer transition-colors
-            ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-50/30'}`}
-        >
-          <input {...getInputProps()} />
-          <div className="text-5xl mb-4">🖼️</div>
-          <p className="text-gray-700 font-medium text-lg">{t.dropzone}</p>
-          <p className="text-gray-400 text-sm mt-2">{t.dropzoneHint}</p>
-        </div>
+        <>
+          <div
+            {...getRootProps()}
+            className={`w-full max-w-3xl border-2 border-dashed rounded-2xl p-16 text-center cursor-pointer transition-colors
+              ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white hover:border-blue-400 hover:bg-blue-50/30'}`}
+          >
+            <input {...getInputProps()} />
+            <div className="text-5xl mb-4">🖼️</div>
+            <p className="text-gray-700 font-medium text-lg">{t.dropzone}</p>
+            <p className="text-gray-400 text-sm mt-2">{t.dropzoneHint}</p>
+          </div>
+
+          {/* 处理方式选择 */}
+          {selectedFile && (
+            <div className="mt-6 w-full max-w-3xl bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+              <p className="text-gray-700 font-medium mb-4">选择处理方式:</p>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  onClick={() => {
+                    processImage(selectedFile)
+                    setSelectedFile(null)
+                  }}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg transition-colors"
+                >
+                  🎨 真实处理 (Real Remove.bg)
+                </button>
+                <button
+                  onClick={() => {
+                    processMockImage(selectedFile)
+                    setSelectedFile(null)
+                  }}
+                  className="bg-green-600 hover:bg-green-700 text-white font-medium py-3 rounded-lg transition-colors"
+                >
+                  🧪 测试处理 (Mock - 输出原图)
+                </button>
+              </div>
+              <button
+                onClick={() => setSelectedFile(null)}
+                className="mt-3 w-full border border-gray-300 text-gray-600 font-medium py-2 rounded-lg hover:bg-gray-50"
+              >
+                取消
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Loading */}

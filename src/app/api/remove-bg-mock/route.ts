@@ -41,40 +41,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "未上传图片" }, { status: 400 })
     }
 
-    const removeFormData = new FormData()
-    removeFormData.append('image_file', file)
-    removeFormData.append('size', 'auto')
+    // 模拟处理延迟（500ms）
+    await new Promise(resolve => setTimeout(resolve, 500))
 
-    const removeRes = await fetch('https://api.remove.bg/v1.0/removebg', {
-      method: 'POST',
-      headers: {
-        'X-API-Key': process.env.REMOVE_BG_API_KEY || 'D7qTp9zbZKRApPDdGhCnbZuf',
-      },
-      body: removeFormData,
-    })
+    // 读取原始图片数据
+    const imageBuffer = await file.arrayBuffer()
 
-    if (!removeRes.ok) {
-      const errorText = await removeRes.text()
-      console.error('Remove.bg API error:', removeRes.status, errorText)
-      
-      if (removeRes.status === 403) {
-        return NextResponse.json({ error: "API Key 无效或已过期", details: "Please check your remove.bg API key" }, { status: 403 })
-      }
-      
-      return NextResponse.json({ error: "处理图片失败", details: errorText }, { status: removeRes.status })
-    }
-
+    // 扣减额度
     await incrementUserCredits(userId, -1)
 
-    const imageBuffer = await removeRes.arrayBuffer()
+    // 返回原图（模拟处理）
     return new NextResponse(imageBuffer, {
       headers: {
-        'Content-Type': 'image/png',
-        'Content-Disposition': 'attachment; filename="result.png"',
+        'Content-Type': file.type || 'image/png',
+        'Content-Disposition': 'attachment; filename="mock-result.png"',
       },
     })
   } catch (error) {
-    console.error('Remove BG error:', error)
+    console.error('Mock Remove BG error:', error)
     return NextResponse.json({ error: "服务器错误" }, { status: 500 })
   }
 }
