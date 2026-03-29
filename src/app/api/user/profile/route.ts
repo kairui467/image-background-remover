@@ -6,6 +6,8 @@ export const runtime = 'edge'
 
 export async function GET(req: Request) {
   try {
+    console.log('[profile] GET request received')
+    
     // 先尝试从 middleware 设置的请求头中获取用户 ID
     let userId = req.headers.get('x-user-id')
     console.log('[profile] User ID from header:', userId)
@@ -14,8 +16,10 @@ export async function GET(req: Request) {
     if (!userId) {
       console.log('[profile] No x-user-id header, trying to parse JWT from cookie')
       const cookieHeader = req.headers.get('cookie') || ''
+      console.log('[profile] Cookie header length:', cookieHeader.length)
       const tokenMatch = cookieHeader.match(/authjs\.session-token=([^;]+)/)
       const token = tokenMatch?.[1]
+      console.log('[profile] Token found:', !!token)
       
       if (token) {
         try {
@@ -26,7 +30,7 @@ export async function GET(req: Request) {
           userId = verified.payload.sub as string
           console.log('[profile] Extracted user ID from token:', userId)
         } catch (e) {
-          console.error('[profile] Failed to verify token:', e)
+          console.error('[profile] Failed to verify token:', e instanceof Error ? e.message : String(e))
         }
       }
     }
@@ -34,13 +38,18 @@ export async function GET(req: Request) {
     if (!userId) {
       console.log('[profile] No user ID found (no header, no token)')
       return NextResponse.json(
-        { error: "未登录", details: "No user ID found" },
+        { 
+          error: "未登录", 
+          code: "AUTH_001",
+          details: "No user ID found in headers or token" 
+        },
         { status: 401 }
       )
     }
 
     console.log('[profile] Getting credits for user:', userId)
     const credits = await getUserCredits(userId)
+    console.log('[profile] Credits fetched:', JSON.stringify(credits))
 
     const response = {
       user: {
@@ -60,13 +69,20 @@ export async function GET(req: Request) {
         expiresAt: credits.planExpiresAt,
       },
     }
-    console.log('[profile] Response credits:', credits)
+    console.log('[profile] Returning response with remaining credits:', credits.credits)
     
     return NextResponse.json(response)
   } catch (error) {
-    console.error('[profile] Error:', error)
+    const errorMsg = error instanceof Error ? error.message : String(error)
+    console.error('[profile] Error:', errorMsg)
+    console.error('[profile] Error stack:', error instanceof Error ? error.stack : 'No stack')
+    
     return NextResponse.json(
-      { error: "服务器错误", details: error instanceof Error ? error.message : 'Unknown' },
+      { 
+        error: "服务器错误", 
+        code: "PROFILE_500",
+        details: errorMsg
+      },
       { status: 500 }
     )
   }

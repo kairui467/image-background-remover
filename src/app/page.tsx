@@ -76,12 +76,20 @@ export default function Home() {
   const fetchUserCredits = async () => {
     try {
       const res = await fetch('/api/user/profile')
-      if (res.ok) {
+      console.log('[fetchUserCredits] Response status:', res.status)
+      
+      if (!res.ok) {
         const data = await res.json()
-        setUserCredits(data.credits.remaining)
+        console.error('[fetchUserCredits] Error response:', res.status, data)
+        console.error(`[fetchUserCredits] Failed to fetch credits: ${res.status} - ${data.error || data.message || 'Unknown error'}`)
+        return
       }
+      
+      const data = await res.json()
+      console.log('[fetchUserCredits] Success:', data)
+      setUserCredits(data.credits.remaining)
     } catch (error) {
-      console.error('Failed to fetch credits:', error)
+      console.error('[fetchUserCredits] Exception:', error)
     }
   }
 
@@ -98,17 +106,39 @@ export default function Home() {
     formData.append('image', file)
 
     try {
+      console.log('[processImage] Sending request to /api/remove-bg')
       const res = await fetch('/api/remove-bg', { method: 'POST', body: formData })
+      console.log('[processImage] Response status:', res.status)
+      
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Processing failed')
+        const contentType = res.headers.get('content-type')
+        let errorData
+        
+        try {
+          if (contentType?.includes('application/json')) {
+            errorData = await res.json()
+          } else {
+            const text = await res.text()
+            errorData = { error: text || `HTTP ${res.status}` }
+          }
+        } catch {
+          errorData = { error: `HTTP ${res.status}` }
+        }
+        
+        const errorMessage = `[${res.status}] ${errorData.error || errorData.message || 'Unknown error'}${errorData.details ? ` - ${errorData.details}` : ''}`
+        console.error('[processImage] Error response:', errorMessage, errorData)
+        throw new Error(errorMessage)
       }
+      
       const blob = await res.blob()
+      console.log('[processImage] Processing successful, blob size:', blob.size)
       setResult(URL.createObjectURL(blob))
       // 处理成功后刷新额度
       await fetchUserCredits()
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Unknown error')
+      const errorMsg = e instanceof Error ? e.message : String(e)
+      console.error('[processImage] Exception:', errorMsg)
+      setError(errorMsg)
     } finally {
       setLoading(false)
     }
@@ -126,17 +156,39 @@ export default function Home() {
     formData.append('image', file)
 
     try {
+      console.log('[processMockImage] Sending request to /api/remove-bg-mock')
       const res = await fetch('/api/remove-bg-mock', { method: 'POST', body: formData })
+      console.log('[processMockImage] Response status:', res.status)
+      
       if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.error || 'Processing failed')
+        const contentType = res.headers.get('content-type')
+        let errorData
+        
+        try {
+          if (contentType?.includes('application/json')) {
+            errorData = await res.json()
+          } else {
+            const text = await res.text()
+            errorData = { error: text || `HTTP ${res.status}` }
+          }
+        } catch {
+          errorData = { error: `HTTP ${res.status}` }
+        }
+        
+        const errorMessage = `[${res.status}] ${errorData.error || errorData.message || 'Unknown error'}${errorData.details ? ` - ${errorData.details}` : ''}`
+        console.error('[processMockImage] Error response:', errorMessage, errorData)
+        throw new Error(errorMessage)
       }
+      
       const blob = await res.blob()
+      console.log('[processMockImage] Processing successful, blob size:', blob.size)
       setResult(URL.createObjectURL(blob))
       // 处理成功后刷新额度
       await fetchUserCredits()
     } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : 'Unknown error')
+      const errorMsg = e instanceof Error ? e.message : String(e)
+      console.error('[processMockImage] Exception:', errorMsg)
+      setError(errorMsg)
     } finally {
       setLoading(false)
     }
