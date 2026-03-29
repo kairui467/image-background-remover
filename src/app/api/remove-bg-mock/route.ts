@@ -1,22 +1,15 @@
 import { NextResponse } from "next/server"
 import { getUserCredits, incrementUserCredits } from "@/lib/kv"
-import { auth } from "@/auth"
 
-// 使用 Node.js Runtime 而不是 Edge，这样可以访问 process.env
-export const runtime = 'nodejs'
+export const runtime = 'edge'
 
 export async function POST(req: Request) {
   try {
-    // 使用 NextAuth 的内置 auth() 函数获取 session
-    const session = await auth()
+    // 从 middleware 设置的请求头中获取用户 ID
+    const userId = req.headers.get('x-user-id')
 
-    if (!session || !session.user) {
-      return NextResponse.json({ error: "未登录" }, { status: 401 })
-    }
-
-    const userId = session.user.id
     if (!userId) {
-      return NextResponse.json({ error: "token 无效" }, { status: 401 })
+      return NextResponse.json({ error: "未登录" }, { status: 401 })
     }
 
     const credits = await getUserCredits(userId)
