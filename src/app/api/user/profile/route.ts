@@ -1,28 +1,30 @@
-import { auth } from "@/auth"
 import { NextResponse } from "next/server"
 import { getUserCredits } from "@/lib/kv"
 
 export const runtime = 'edge'
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const session = await auth()
-
-    if (!session?.user?.id) {
+    // 从 middleware 设置的请求头中获取用户 ID
+    const userId = req.headers.get('x-user-id')
+    
+    if (!userId) {
+      console.log('[profile] No user ID found')
       return NextResponse.json(
         { error: "未登录" },
         { status: 401 }
       )
     }
 
-    const credits = await getUserCredits(session.user.id)
+    console.log('[profile] Getting credits for user:', userId)
+    const credits = await getUserCredits(userId)
 
-    return NextResponse.json({
+    const response = {
       user: {
-        id: session.user.id,
-        name: session.user.name ?? null,
-        email: session.user.email,
-        image: session.user.image ?? null,
+        id: userId,
+        name: null,
+        email: null,
+        image: null,
         createdAt: new Date().toISOString(),
       },
       credits: {
@@ -34,11 +36,14 @@ export async function GET() {
         type: credits.planType,
         expiresAt: credits.planExpiresAt,
       },
-    })
+    }
+    console.log('[profile] Response:', response)
+    
+    return NextResponse.json(response)
   } catch (error) {
-    console.error(error)
+    console.error('[profile] Error:', error)
     return NextResponse.json(
-      { error: "服务器错误" },
+      { error: "服务器错误", details: error instanceof Error ? error.message : 'Unknown' },
       { status: 500 }
     )
   }

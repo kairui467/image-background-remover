@@ -32,19 +32,35 @@ export async function getUserCredits(userId: string): Promise<UserCredits> {
 }
 
 export async function setUserCredits(userId: string, data: UserCredits): Promise<void> {
-  await fetch(`${KV_BASE}/values/user:${userId}`, {
-    method: "PUT",
-    headers: { Authorization: `Bearer ${CF_API_TOKEN}`, "Content-Type": "text/plain" },
-    body: JSON.stringify(data),
-  })
+  try {
+    const res = await fetch(`${KV_BASE}/values/user:${userId}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${CF_API_TOKEN}`, "Content-Type": "text/plain" },
+      body: JSON.stringify(data),
+    })
+    if (!res.ok) {
+      const errorText = await res.text()
+      console.error(`[KV] Failed to set credits for ${userId}:`, res.status, errorText)
+      throw new Error(`KV write failed: ${res.status}`)
+    }
+    console.log(`[KV] Successfully set credits for ${userId}:`, data)
+  } catch (error) {
+    console.error(`[KV] Error setting credits for ${userId}:`, error)
+    throw error
+  }
 }
 
 export async function incrementUserCredits(userId: string, amount: number): Promise<UserCredits> {
+  console.log(`[KV] Getting current credits for ${userId}`)
   const current = await getUserCredits(userId)
+  console.log(`[KV] Current credits: ${current.credits}, amount to add: ${amount}`)
+  
   const updated: UserCredits = {
     ...current,
     credits: current.credits + amount,
   }
+  console.log(`[KV] Updated credits will be: ${updated.credits}`)
+  
   await setUserCredits(userId, updated)
   return updated
 }
