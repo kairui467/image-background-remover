@@ -1,33 +1,22 @@
 import { NextResponse } from "next/server"
 import { getUserCredits, incrementUserCredits } from "@/lib/kv"
-import { jwtVerify } from "jose"
+import { auth } from "@/auth"
 
-export const runtime = 'edge'
-
-const secret = new TextEncoder().encode(process.env.AUTH_SECRET || 'default-secret-key-for-edge-runtime')
+// 使用 Node.js Runtime 而不是 Edge，这样可以访问 process.env
+export const runtime = 'nodejs'
 
 export async function POST(req: Request) {
   try {
-    // 从 cookie 中获取 token
-    const cookieHeader = req.headers.get('cookie') || ''
-    const tokenMatch = cookieHeader.match(/authjs\.session-token=([^;]+)/)
-    const token = tokenMatch?.[1]
+    // 使用 NextAuth 的内置 auth() 函数获取 session
+    const session = await auth()
 
-    if (!token) {
-      return NextResponse.json({ error: "未登录", details: "No session token found" }, { status: 401 })
+    if (!session || !session.user) {
+      return NextResponse.json({ error: "未登录" }, { status: 401 })
     }
 
-    // 解析 JWT
-    let userId: string
-    try {
-      const verified = await jwtVerify(token, secret)
-      userId = verified.payload.sub as string
-      if (!userId) {
-        return NextResponse.json({ error: "token 无效", details: "No user ID in token" }, { status: 401 })
-      }
-    } catch (e) {
-      const errorMsg = e instanceof Error ? e.message : 'Unknown error'
-      return NextResponse.json({ error: "token 无效", details: errorMsg }, { status: 401 })
+    const userId = session.user.id
+    if (!userId) {
+      return NextResponse.json({ error: "token 无效" }, { status: 401 })
     }
 
     const credits = await getUserCredits(userId)
@@ -59,6 +48,6 @@ export async function POST(req: Request) {
     })
   } catch (error) {
     console.error('Mock Remove BG error:', error)
-    return NextResponse.json({ error: "服务器错误" }, { status: 500 })
+    return NextResponse.json({ error: "服务器错误", details: error instanceof Error ? error.message : 'Unknown' }, { status: 500 })
   }
 }
