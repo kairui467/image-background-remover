@@ -33,17 +33,29 @@ export async function getUserCredits(userId: string): Promise<UserCredits> {
 
 export async function setUserCredits(userId: string, data: UserCredits): Promise<void> {
   try {
+    console.log(`[KV] Setting credits for ${userId}:`, JSON.stringify(data))
     const res = await fetch(`${KV_BASE}/values/user:${userId}`, {
       method: "PUT",
       headers: { Authorization: `Bearer ${CF_API_TOKEN}`, "Content-Type": "text/plain" },
       body: JSON.stringify(data),
     })
+    
+    console.log(`[KV] Response status: ${res.status}`)
+    
     if (!res.ok) {
       const errorText = await res.text()
       console.error(`[KV] Failed to set credits for ${userId}:`, res.status, errorText)
-      throw new Error(`KV write failed: ${res.status}`)
+      
+      // 解析 Cloudflare 错误响应
+      let errorDetails = errorText
+      try {
+        const errorJson = JSON.parse(errorText)
+        errorDetails = errorJson.errors?.[0]?.message || errorJson.error || errorText
+      } catch {}
+      
+      throw new Error(`KV write failed: ${res.status} - ${errorDetails}`)
     }
-    console.log(`[KV] Successfully set credits for ${userId}:`, data)
+    console.log(`[KV] Successfully set credits for ${userId}`)
   } catch (error) {
     console.error(`[KV] Error setting credits for ${userId}:`, error)
     throw error
