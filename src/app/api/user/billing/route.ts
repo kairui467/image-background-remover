@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import { jwtVerify } from "jose"
+import { getUserBills } from "@/lib/kv"
 
 export const runtime = 'edge'
 
 async function getUserIdFromRequest(req: NextRequest): Promise<string | null> {
-  // 先尝试从请求头
   let userId = req.headers.get('x-user-id')
   if (userId) return userId
   
-  // 尝试从 cookie 解析 JWT
   const cookieHeader = req.headers.get('cookie') || ''
   const tokenMatch = cookieHeader.match(/authjs\.session-token=([^;]+)/)
   const token = tokenMatch?.[1]
@@ -37,12 +36,16 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    // 暂时返回空列表（无数据库连接）
+    const url = new URL(req.url)
+    const limit = parseInt(url.searchParams.get('limit') || '10')
+    
+    const bills = await getUserBills(userId, limit)
+    
     return NextResponse.json({
-      bills: [],
-      total: 0,
+      bills,
+      total: bills.length,
       page: 1,
-      limit: 10,
+      limit,
     })
   } catch (error) {
     console.error('[billing] Error:', error)

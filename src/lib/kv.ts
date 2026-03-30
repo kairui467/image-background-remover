@@ -19,6 +19,14 @@ export interface ImageRecord {
   date: string
 }
 
+export interface Bill {
+  id: string
+  date: string
+  item: string
+  amount: string
+  status: string
+}
+
 const DEFAULT_CREDITS: UserCredits = {
   credits: 1,
   totalCreditsUsed: 0,
@@ -174,5 +182,94 @@ export async function addRecordToIndex(userId: string, recordId: string): Promis
   } catch (error) {
     console.error(`[KV] Error updating records index:`, error)
     throw error
+  }
+}
+
+export async function addBill(userId: string, bill: Bill): Promise<void> {
+  try {
+    const key = `bills:${userId}:${bill.id}`
+    console.log(`[KV] Adding bill for ${userId}:`, key)
+    const res = await fetch(`${KV_BASE}/values/${key}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${CF_API_TOKEN}`, "Content-Type": "text/plain" },
+      body: JSON.stringify(bill),
+    })
+    
+    if (!res.ok) {
+      const errorText = await res.text()
+      console.error(`[KV] Failed to add bill:`, res.status, errorText)
+      throw new Error(`KV write failed: ${res.status}`)
+    }
+    console.log(`[KV] Successfully added bill for ${userId}`)
+  } catch (error) {
+    console.error(`[KV] Error adding bill for ${userId}:`, error)
+    throw error
+  }
+}
+
+export async function addBillToIndex(userId: string, billId: string): Promise<void> {
+  try {
+    const indexKey = `bills:${userId}:index`
+    const res = await fetch(`${KV_BASE}/values/${indexKey}`, {
+      headers: { Authorization: `Bearer ${CF_API_TOKEN}` },
+    })
+    
+    let billIds: string[] = []
+    if (res.ok) {
+      const indexText = await res.text()
+      billIds = JSON.parse(indexText)
+    }
+    
+    billIds.push(billId)
+    
+    const updateRes = await fetch(`${KV_BASE}/values/${indexKey}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${CF_API_TOKEN}`, "Content-Type": "text/plain" },
+      body: JSON.stringify(billIds),
+    })
+    
+    if (!updateRes.ok) {
+      console.error(`[KV] Failed to update bills index`)
+      throw new Error(`KV write failed: ${updateRes.status}`)
+    }
+  } catch (error) {
+    console.error(`[KV] Error updating bills index:`, error)
+    throw error
+  }
+}
+
+export async function getUserBills(userId: string, limit: number = 10): Promise<Bill[]> {
+  try {
+    console.log(`[KV] Getting bills for ${userId}`)
+    const indexKey = `bills:${userId}:index`
+    const res = await fetch(`${KV_BASE}/values/${indexKey}`, {
+      headers: { Authorization: `Bearer ${CF_API_TOKEN}` },
+    })
+    
+    if (!res.ok) {
+      console.log(`[KV] No bills index found for ${userId}`)
+      return []
+    }
+    
+    const indexText = await res.text()
+    const billIds: string[] = JSON.parse(indexText)
+    
+    const recentIds = billIds.slice(-limit).reverse()
+    const bills: Bill[] = []
+    
+    for (const id of recentIds) {
+      const billRes = await fetch(`${KV_BASE}/values/bills:${userId}:${id}`, {
+        headers: { Authorization: `Bearer ${CF_API_TOKEN}` },
+      })
+      if (billRes.ok) {
+        const billText = await billRes.text()
+        bills.push(JSON.parse(billText))
+      }
+    }
+    
+    return bills
+  } catch (error) {
+    console.error(`[KV] Error getting bills for ${userId}:`, error)
+    return []
   }
 }
