@@ -132,15 +132,23 @@ export default function ProfilePage() {
     return null
   }
 
-  const usagePercent = (profile.credits.used / profile.credits.total) * 100
+  const usagePercent = profile.credits.total > 0 ? (profile.credits.used / profile.credits.total) * 100 : 0
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-50 to-white px-4 py-10">
       <div className="max-w-5xl mx-auto">
         {/* 页面标题 */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">个人中心</h1>
-          <p className="text-gray-500 mt-2">管理你的账户和订阅</p>
+        <div className="mb-8 flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">个人中心</h1>
+            <p className="text-gray-500 mt-2">管理你的账户和订阅</p>
+          </div>
+          <button
+            onClick={fetchData}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+          >
+            🔄 刷新
+          </button>
         </div>
 
         {/* 用户信息卡片 */}
