@@ -11,6 +11,14 @@ export interface UserCredits {
   planExpiresAt: string | null
 }
 
+export interface ImageRecord {
+  id: string
+  fileName: string
+  status: string
+  cost: number
+  date: string
+}
+
 const DEFAULT_CREDITS: UserCredits = {
   credits: 1,
   totalCreditsUsed: 0,
@@ -76,4 +84,95 @@ export async function incrementUserCredits(userId: string, amount: number): Prom
   
   await setUserCredits(userId, updated)
   return updated
+}
+
+export async function addImageRecord(userId: string, record: ImageRecord): Promise<void> {
+  try {
+    const key = `records:${userId}:${record.id}`
+    console.log(`[KV] Adding record for ${userId}:`, key)
+    const res = await fetch(`${KV_BASE}/values/${key}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${CF_API_TOKEN}`, "Content-Type": "text/plain" },
+      body: JSON.stringify(record),
+    })
+    
+    if (!res.ok) {
+      const errorText = await res.text()
+      console.error(`[KV] Failed to add record:`, res.status, errorText)
+      throw new Error(`KV write failed: ${res.status}`)
+    }
+    console.log(`[KV] Successfully added record for ${userId}`)
+  } catch (error) {
+    console.error(`[KV] Error adding record for ${userId}:`, error)
+    throw error
+  }
+}
+
+export async function getUserRecords(userId: string, limit: number = 10): Promise<ImageRecord[]> {
+  try {
+    console.log(`[KV] Getting records for ${userId}`)
+    // 由于 KV 没有列表 API，我们存储一个索引
+    const indexKey = `records:${userId}:index`
+    const res = await fetch(`${KV_BASE}/values/${indexKey}`, {
+      headers: { Authorization: `Bearer ${CF_API_TOKEN}` },
+    })
+    
+    if (!res.ok) {
+      console.log(`[KV] No records index found for ${userId}`)
+      return []
+    }
+    
+    const indexText = await res.text()
+    const recordIds: string[] = JSON.parse(indexText)
+    
+    // 获取最近的 limit 条记录
+    const recentIds = recordIds.slice(-limit).reverse()
+    const records: ImageRecord[] = []
+    
+    for (const id of recentIds) {
+      const recordRes = await fetch(`${KV_BASE}/values/records:${userId}:${id}`, {
+        headers: { Authorization: `Bearer ${CF_API_TOKEN}` },
+      })
+      if (recordRes.ok) {
+        const recordText = await recordRes.text()
+        records.push(JSON.parse(recordText))
+      }
+    }
+    
+    return records
+  } catch (error) {
+    console.error(`[KV] Error getting records for ${userId}:`, error)
+    return []
+  }
+}
+
+export async function addRecordToIndex(userId: string, recordId: string): Promise<void> {
+  try {
+    const indexKey = `records:${userId}:index`
+    const res = await fetch(`${KV_BASE}/values/${indexKey}`, {
+      headers: { Authorization: `Bearer ${CF_API_TOKEN}` },
+    })
+    
+    let recordIds: string[] = []
+    if (res.ok) {
+      const indexText = await res.text()
+      recordIds = JSON.parse(indexText)
+    }
+    
+    recordIds.push(recordId)
+    
+    const updateRes = await fetch(`${KV_BASE}/values/${indexKey}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${CF_API_TOKEN}`, "Content-Type": "text/plain" },
+      body: JSON.stringify(recordIds),
+    })
+    
+    if (!updateRes.ok) {
+      console.error(`[KV] Failed to update records index`)
+      throw new Error(`KV write failed: ${updateRes.status}`)
+    }
+  } catch (error) {
+    console.error(`[KV] Error updating records index:`, error)
+    throw error
+  }
 }

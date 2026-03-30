@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server"
-import { getUserCredits, incrementUserCredits } from "@/lib/kv"
+import { getUserCredits, incrementUserCredits, addImageRecord, addRecordToIndex } from "@/lib/kv"
 
 export const runtime = 'edge'
 
 export async function POST(req: Request) {
   try {
-    // 从 middleware 设置的请求头中获取用户 ID
     const userId = req.headers.get('x-user-id')
 
     if (!userId) {
@@ -27,7 +26,6 @@ export async function POST(req: Request) {
     removeFormData.append('image_file', file)
     removeFormData.append('size', 'auto')
 
-    // 硬编码 API Key（Edge Runtime 无法读取 process.env）
     const removeRes = await fetch('https://api.remove.bg/v1.0/removebg', {
       method: 'POST',
       headers: {
@@ -48,6 +46,23 @@ export async function POST(req: Request) {
     }
 
     await incrementUserCredits(userId, -1)
+
+    // 添加使用记录
+    const recordId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    const record = {
+      id: recordId,
+      fileName: file.name,
+      status: "SUCCESS",
+      cost: 1,
+      date: new Date().toLocaleString('zh-CN'),
+    }
+    
+    try {
+      await addImageRecord(userId, record)
+      await addRecordToIndex(userId, recordId)
+    } catch (recordError) {
+      console.error('Failed to add record:', recordError)
+    }
 
     const imageBuffer = await removeRes.arrayBuffer()
     return new NextResponse(imageBuffer, {

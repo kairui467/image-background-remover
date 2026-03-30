@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server"
-import { getUserCredits, incrementUserCredits } from "@/lib/kv"
+import { getUserCredits, incrementUserCredits, addImageRecord, addRecordToIndex } from "@/lib/kv"
 
 export const runtime = 'edge'
 
@@ -7,7 +7,6 @@ export async function POST(req: Request) {
   try {
     console.log('[remove-bg-mock] POST request received')
     
-    // 从 middleware 设置的请求头中获取用户 ID
     const userId = req.headers.get('x-user-id')
     console.log('[remove-bg-mock] User ID from header:', userId)
 
@@ -46,18 +45,33 @@ export async function POST(req: Request) {
 
     console.log('[remove-bg-mock] Processing file:', file.name, 'size:', file.size)
 
-    // 模拟处理延迟（500ms）
     await new Promise(resolve => setTimeout(resolve, 500))
 
-    // 读取原始图片数据
     const imageBuffer = await file.arrayBuffer()
 
-    // 扣减额度
     console.log('[remove-bg-mock] Deducting 1 credit from user:', userId)
     const updatedCredits = await incrementUserCredits(userId, -1)
     console.log('[remove-bg-mock] Credits after deduction:', updatedCredits.credits)
 
-    // 返回原图（模拟处理）
+    // 添加使用记录
+    const recordId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+    const record = {
+      id: recordId,
+      fileName: file.name,
+      status: "SUCCESS",
+      cost: 1,
+      date: new Date().toLocaleString('zh-CN'),
+    }
+    
+    try {
+      await addImageRecord(userId, record)
+      await addRecordToIndex(userId, recordId)
+      console.log('[remove-bg-mock] Record added:', recordId)
+    } catch (recordError) {
+      console.error('[remove-bg-mock] Failed to add record:', recordError)
+      // 不中断主流程，记录失败不影响图片处理
+    }
+
     return new NextResponse(imageBuffer, {
       headers: {
         'Content-Type': file.type || 'image/png',
