@@ -140,6 +140,11 @@ export default function ProfilePage() {
         {/* 页面标题 */}
         <div className="mb-8 flex justify-between items-center">
           <div>
+            <div className="flex items-center gap-2 mb-2">
+              <Link href="/" className="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                ← 返回首页
+              </Link>
+            </div>
             <h1 className="text-3xl font-bold text-gray-900">个人中心</h1>
             <p className="text-gray-500 mt-2">管理你的账户和订阅</p>
           </div>
