@@ -51,7 +51,6 @@ export async function GET(req: Request) {
     const credits = await getUserCredits(userId)
     console.log('[profile] Credits fetched:', JSON.stringify(credits))
 
-    const total = credits.credits + credits.totalCreditsUsed
     const response = {
       user: {
         id: userId,
@@ -62,7 +61,7 @@ export async function GET(req: Request) {
       },
       credits: {
         remaining: credits.credits,
-        total: total,
+        total: credits.credits + credits.totalCreditsUsed,
         used: credits.totalCreditsUsed,
       },
       plan: {

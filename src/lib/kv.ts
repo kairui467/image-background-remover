@@ -70,8 +70,9 @@ export async function incrementUserCredits(userId: string, amount: number): Prom
   const updated: UserCredits = {
     ...current,
     credits: current.credits + amount,
+    totalCreditsUsed: amount < 0 ? current.totalCreditsUsed - amount : current.totalCreditsUsed,
   }
-  console.log(`[KV] Updated credits will be: ${updated.credits}`)
+  console.log(`[KV] Updated credits will be: ${updated.credits}, totalCreditsUsed: ${updated.totalCreditsUsed}`)
   
   await setUserCredits(userId, updated)
   return updated
