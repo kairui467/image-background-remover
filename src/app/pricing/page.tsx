@@ -103,33 +103,6 @@ export default function PricingPage() {
     { name: "超大包", price: "$13.99", credits: 300, unitPrice: "$0.05/次", planType: "CREDITS_XLARGE" },
   ]
 
-  const faqs = [
-    {
-      q: "可以随时取消订阅吗？",
-      a: "可以。你可以在个人中心随时取消订阅，不会收取任何费用。下个月不会再扣费。",
-    },
-    {
-      q: "未使用的额度会过期吗？",
-      a: "月度订阅的额度在月末过期。年度订阅的额度在年末过期。积分包永久有效。",
-    },
-    {
-      q: "如何升级或降级方案？",
-      a: "在个人中心可以随时修改订阅方案。升级立即生效，降级在下个计费周期生效。",
-    },
-    {
-      q: "支持哪些支付方式？",
-      a: "目前支持 PayPal，包含 PayPal 余额、信用卡、借记卡等多种付款方式。",
-    },
-    {
-      q: "如何获取发票？",
-      a: "在账单历史中可以下载电子发票。",
-    },
-    {
-      q: "有学生优惠吗？",
-      a: "有。学生可享受 30% 折扣。需提供学生证明。",
-    },
-  ]
-
   const currentPlans = plans[billingCycle]
 
   const handlePayment = async (planType: string) => {
@@ -296,21 +269,18 @@ export default function PricingPage() {
           </div>
         </div>
 
-        {/* 常见问题 */}
-        <div className="bg-white rounded-xl border border-gray-200 p-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8">常见问题</h2>
-          <div className="space-y-6">
-            {faqs.map((faq, idx) => (
-              <div key={idx}>
-                <h3 className="font-semibold text-gray-900 mb-2">
-                  {faq.q}
-                </h3>
-                <p className="text-gray-600">
-                  {faq.a}
-                </p>
-              </div>
-            ))}
-          </div>
+        {/* 常见问题链接 */}
+        <div className="bg-blue-50 rounded-xl border border-blue-200 p-8 text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">常见问题</h2>
+          <p className="text-gray-600 mb-6">
+            有疑问？查看我们的详细 FAQ 页面
+          </p>
+          <Link
+            href="/faq"
+            className="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+          >
+            查看 FAQ →
+          </Link>
         </div>
 
         {/* 底部信任背书 */}
