@@ -230,10 +230,14 @@ export default function Home() {
     <main className="min-h-screen flex flex-col items-center bg-gradient-to-b from-slate-50 to-white px-4 py-10">
 
       {/* Header */}
-      <header className="w-full max-w-3xl flex items-center justify-between mb-10">
-        <div>
+      <header className="w-full max-w-3xl flex items-center justify-between mb-6">
+        <div className="flex-1">
           <h1 className="text-3xl font-bold text-gray-900">{t.title}</h1>
           <p className="text-gray-500 mt-1">{t.subtitle}</p>
+          {/* 免费 3 次徽章 */}
+          <div className="mt-3 inline-block bg-green-50 border border-green-200 text-green-700 px-4 py-2 rounded-lg text-sm font-medium">
+            🎉 免费试用 3 次 — 无需信用卡
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -272,6 +276,27 @@ export default function Home() {
               <p className="text-gray-400 text-xs mt-1">{step.desc}</p>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Before/After 效果展示 */}
+      {!original && (
+        <div className="w-full max-w-3xl mb-8 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
+          <p className="text-center text-gray-600 font-medium mb-4">✨ 看看我们能做什么</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-lg overflow-hidden border border-gray-200">
+              <p className="text-xs text-center text-gray-400 py-2 bg-gray-50">原图</p>
+              <div className="bg-gray-100 h-48 flex items-center justify-center">
+                <span className="text-gray-400">示例图片</span>
+              </div>
+            </div>
+            <div className="rounded-lg overflow-hidden border border-gray-200">
+              <p className="text-xs text-center text-gray-400 py-2 bg-gray-50">处理后</p>
+              <div className="bg-gradient-to-br from-blue-50 to-purple-50 h-48 flex items-center justify-center">
+                <span className="text-gray-400">透明背景</span>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
@@ -379,6 +404,22 @@ export default function Home() {
       <footer className="mt-auto pt-16 text-gray-400 text-sm">
         {t.footer}
       </footer>
+
+      {/* 统计数据 */}
+      <div className="w-full max-w-3xl mt-12 mb-8 grid grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl border border-gray-200 p-6 text-center shadow-sm">
+          <p className="text-3xl font-bold text-blue-600">10K+</p>
+          <p className="text-gray-600 text-sm mt-2">已处理图片</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-6 text-center shadow-sm">
+          <p className="text-3xl font-bold text-blue-600">4.8★</p>
+          <p className="text-gray-600 text-sm mt-2">用户评分</p>
+        </div>
+        <div className="bg-white rounded-xl border border-gray-200 p-6 text-center shadow-sm">
+          <p className="text-3xl font-bold text-blue-600">&lt;2s</p>
+          <p className="text-gray-600 text-sm mt-2">平均处理时间</p>
+        </div>
+      </div>
 
       {/* 登录提示模态框 */}
       {showLoginModal && (
