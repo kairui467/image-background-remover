@@ -286,15 +286,25 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-4">
             <div className="rounded-lg overflow-hidden border border-gray-200">
               <p className="text-xs text-center text-gray-400 py-2 bg-gray-50">原图</p>
-              <div className="bg-gray-100 h-48 flex items-center justify-center">
-                <span className="text-gray-400">示例图片</span>
-              </div>
+              <img 
+                src="https://images.remove.bg/preview/a1234567-b890-c123-d456-e78901234567/original.jpg" 
+                alt="原图示例" 
+                className="w-full h-48 object-cover bg-gray-100"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23f3f4f6%22 width=%22400%22 height=%22300%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%239ca3af%22 font-size=%2216%22%3E示例图片%3C/text%3E%3C/svg%3E'
+                }}
+              />
             </div>
             <div className="rounded-lg overflow-hidden border border-gray-200">
               <p className="text-xs text-center text-gray-400 py-2 bg-gray-50">处理后</p>
-              <div className="bg-gradient-to-br from-blue-50 to-purple-50 h-48 flex items-center justify-center">
-                <span className="text-gray-400">透明背景</span>
-              </div>
+              <img 
+                src="https://images.remove.bg/preview/a1234567-b890-c123-d456-e78901234567/preview.png" 
+                alt="处理后示例" 
+                className="w-full h-48 object-cover bg-gradient-to-br from-blue-50 to-purple-50"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23ede9fe%22 width=%22400%22 height=%22300%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%239ca3af%22 font-size=%2216%22%3E透明背景%3C/text%3E%3C/svg%3E'
+                }}
+              />
             </div>
           </div>
         </div>
