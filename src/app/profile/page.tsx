@@ -49,6 +49,7 @@ export default function ProfilePage() {
   const [bills, setBills] = useState<Bill[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [refreshingCredits, setRefreshingCredits] = useState(false)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -89,6 +90,21 @@ export default function ProfilePage() {
       console.error(err)
     } finally {
       setLoading(false)
+    }
+  }
+
+  // 只刷新额度信息
+  const refreshCredits = async () => {
+    try {
+      setRefreshingCredits(true)
+      const profileRes = await fetch("/api/user/profile")
+      if (!profileRes.ok) throw new Error("获取用户信息失败")
+      const profileData = await profileRes.json()
+      setProfile(profileData)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setRefreshingCredits(false)
     }
   }
 
@@ -148,12 +164,6 @@ export default function ProfilePage() {
             <h1 className="text-3xl font-bold text-gray-900">个人中心</h1>
             <p className="text-gray-500 mt-2">管理你的账户和订阅</p>
           </div>
-          <button
-            onClick={fetchData}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
-          >
-            🔄 刷新
-          </button>
         </div>
 
         {/* 用户信息卡片 */}
@@ -222,7 +232,16 @@ export default function ProfilePage() {
           <div className="space-y-6">
             {/* 额度信息卡片 */}
             <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-6">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">💳 当前额度</h3>
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-lg font-bold text-gray-900">💳 当前额度</h3>
+                <button
+                  onClick={refreshCredits}
+                  disabled={refreshingCredits}
+                  className="px-3 py-1 text-sm bg-blue-100 text-blue-600 rounded hover:bg-blue-200 transition-colors disabled:opacity-50"
+                >
+                  {refreshingCredits ? "刷新中..." : "🔄 刷新"}
+                </button>
+              </div>
               <div className="space-y-4">
                 {/* 进度条 */}
                 <div>
