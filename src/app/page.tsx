@@ -284,23 +284,21 @@ export default function Home() {
         <div className="w-full max-w-3xl mb-8 bg-white rounded-xl border border-gray-200 p-6 shadow-sm">
           <p className="text-center text-gray-600 font-medium mb-4">✨ 看看我们能做什么</p>
           <div className="grid grid-cols-2 gap-4">
-            <div className="rounded-lg overflow-hidden border border-gray-200">
-              <p className="text-xs text-center text-gray-400 py-2 bg-gray-50">原图</p>
+            <div className="rounded-lg overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center" style={{ minHeight: '300px' }}>
               <img 
                 src="https://sb.kaleidousercontent.com/67418/604x802/9455f54d5d/person-1.png" 
                 alt="原图示例" 
-                className="w-full h-48 object-cover bg-gray-100"
+                className="max-w-full max-h-full object-contain"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23f3f4f6%22 width=%22400%22 height=%22300%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%239ca3af%22 font-size=%2216%22%3E示例图片%3C/text%3E%3C/svg%3E'
                 }}
               />
             </div>
-            <div className="rounded-lg overflow-hidden border border-gray-200">
-              <p className="text-xs text-center text-gray-400 py-2 bg-gray-50">处理后</p>
+            <div className="rounded-lg overflow-hidden border border-gray-200 bg-gradient-to-br from-blue-50 to-purple-50 flex items-center justify-center" style={{ minHeight: '300px' }}>
               <img 
                 src="https://sb.kaleidousercontent.com/67418/604x802/cb1c7782ea/person-2.png" 
                 alt="处理后示例" 
-                className="w-full h-48 object-cover bg-gradient-to-br from-blue-50 to-purple-50"
+                className="max-w-full max-h-full object-contain"
                 onError={(e) => {
                   (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%23ede9fe%22 width=%22400%22 height=%22300%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 text-anchor=%22middle%22 dy=%22.3em%22 fill=%22%239ca3af%22 font-size=%2216%22%3E透明背景%3C/text%3E%3C/svg%3E'
                 }}
