@@ -287,7 +287,7 @@ export default function Home() {
             <div className="rounded-lg overflow-hidden border border-gray-200">
               <p className="text-xs text-center text-gray-400 py-2 bg-gray-50">原图</p>
               <img 
-                src="https://images.remove.bg/preview/a1234567-b890-c123-d456-e78901234567/original.jpg" 
+                src="https://sb.kaleidousercontent.com/67418/604x802/9455f54d5d/person-1.png" 
                 alt="原图示例" 
                 className="w-full h-48 object-cover bg-gray-100"
                 onError={(e) => {
@@ -298,7 +298,7 @@ export default function Home() {
             <div className="rounded-lg overflow-hidden border border-gray-200">
               <p className="text-xs text-center text-gray-400 py-2 bg-gray-50">处理后</p>
               <img 
-                src="https://images.remove.bg/preview/a1234567-b890-c123-d456-e78901234567/preview.png" 
+                src="https://sb.kaleidousercontent.com/67418/604x802/cb1c7782ea/person-2.png" 
                 alt="处理后示例" 
                 className="w-full h-48 object-cover bg-gradient-to-br from-blue-50 to-purple-50"
                 onError={(e) => {
